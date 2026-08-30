@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>WALL-E Central Master Interface</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --accent: #e3a018;
+      --accent-active: #2ea043;
+      --accent-danger: #da3633;
+      --text: #c9d1d9;
+      --text-bright: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, monospace;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      padding: 15px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      color: var(--text-bright);
+      font-size: 0.95rem;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: #21262d;
+      color: #8b949e;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .status-badge.online {
+      background: rgba(46, 160, 67, 0.2);
+      color: #3fb950;
+    }
+
+    .status-badge.offline {
+      background: rgba(218, 54, 51, 0.2);
+      color: #f85149;
+    }
+
+    .ip-config {
+      display: flex;
+      gap: 6px;
+    }
+
+    input[type="text"] {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      padding: 7px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      flex-grow: 1;
+    }
+
+    button {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      padding: 7px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #30363d;
+      border-color: var(--accent);
+    }
+
+    button.active-btn {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+    }
+
+    .stream-viewport {
+      width: 100%;
+      height: 200px;
+      background: #000;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .stream-viewport img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #mapping-canvas {
+      width: 100%;
+      height: 200px;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric-box {
+      background: #0d1117;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: #8b949e;
+    }
+
+    .metric-val {
+      font-size: 1.1rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .face-button {
+      min-height: 40px;
+    }
+
+    .face-button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .face-button.selected {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      border-color: var(--accent);
+    }
+
+    .log-terminal {
+      background: #000;
+      color: #39d353;
+      padding: 8px;
+      font-size: 0.75rem;
+      height: 90px;
+      overflow-y: auto;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .connection-info {
+      font-size: 0.7rem;
+      color: #8b949e;
+    }
+
+    .connection-info span {
+      color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .btn-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+<header>
+  <h1>🤖 WALL-E CENTRAL MASTER INTERFACE</h1>
+
+  <div style="font-size:0.8rem;">
+    Architecture: Distributed Multi-MCU
+  </div>
+</header>
+
+<div class="grid-container">
+
+  <!-- =====================================================
+       NODE 1 - RASPBERRY PI 5
+       ===================================================== -->
+
+  <div class="card">
+
+```
+<div class="card-header">
+
+  <span class="card-title">
+    🧠 Master Processing: Face & Vision (Pi 5)
+  </span>
+
+  <span class="status-badge offline" id="badge-pi">
+    Offline
+  </span>
+
+</div>
+
+<div class="ip-config">
+
+  <input
+    type="text"
+    id="ip-pi"
+    value="http://192.168.1.100:5000/video_feed"
+    placeholder="Pi 5 Stream URL"
+  />
+
+  <button onclick="connectPiStream()">
+    Stream
+  </button>
+
+</div>
+
+<div class="stream-viewport">
+
+  <img
+    id="pi-video-stream"
+    src=""
+    alt="Live Video Feed"
+  />
+
+</div>
+
+<div class="log-terminal" id="log-pi">
+  > Master AI Inference Ready...
+</div>
+```
+
+  </div>
+
+  <!-- =====================================================
+       NODE 2 - 3D MAPPING
+       ===================================================== -->
+
+  <div class="card">
+
+```
+<div class="card-header">
+
+  <span class="card-title">
+    🗺️ 3D Mapping & SLAM (ESP32)
+  </span>
+
+  <span class="status-badge offline" id="badge-slam">
+    Offline
+  </span>
+
+</div>
+
+<div class="ip-config">
+
+  <input
+    type="text"
+    id="ip-slam"
+    value="ws://192.168.4.1:81"
+    placeholder="ws://ESP32_IP:81"
+  />
+
+  <button onclick="connectSLAMWebSocket()">
+    Connect
+  </button>
+
+</div>
+
+<div id="mapping-canvas"></div>
+
+<div style="
+  font-size:0.7rem;
+  color:#8b949e;
+  text-align:center;
+">
+  4x Ultrasonic Obstacle Vectors + MPU6050 Heading
+</div>
+```
+
+  </div>
+
+  <!-- =====================================================
+       NODE 3 - VOICE ASSISTANT
+       ===================================================== -->
+
+  <div class="card">
+
+```
+<div class="card-header">
+
+  <span class="card-title">
+    🎙️ AI Voice Assistant (ESP32)
+  </span>
+
+  <span class="status-badge offline" id="badge-voice">
+    Offline
+  </span>
+
+</div>
+
+<div class="ip-config">
+
+  <input
+    type="text"
+    id="ip-voice"
+    value="ws://192.168.1.102:8080"
+    placeholder="ws://ESP32_Voice_IP:Port"
+  />
+
+  <button onclick="connectVoiceSocket()">
+    Connect
+  </button>
+
+</div>
+
+<div class="metric-box" style="text-align:left;">
+
+  <div class="metric-label">
+    Assistant State
+  </div>
+
+  <div
+    class="metric-val"
+    id="voice-state"
+    style="
+      font-size:1rem;
+      color:var(--text-bright);
+    "
+  >
+    IDLE / LISTENING
+  </div>
+
+  <div
+    class="metric-label"
+    style="margin-top:5px;"
+  >
+    Decoded Command
+  </div>
+
+  <div
+    id="voice-command"
+    style="
+      font-size:0.85rem;
+      color:var(--accent);
+    "
+  >
+    Waiting for wake word...
+  </div>
+
+</div>
+
+<div class="log-terminal" id="log-voice">
+  > INMP441 I2S Audio Pipeline Active
+</div>
+```
+
+  </div>
+
+  <!-- =====================================================
+       NODE 4 - WALL-E FACE
+       ===================================================== -->
+
+  <div class="card">
+
+```
+<div class="card-header">
+
+  <span class="card-title">
+    😃 WALL-E Facial Expression Matrix
+  </span>
+
+  <span
+    class="status-badge offline"
+    id="badge-face"
+  >
+    Offline
+  </span>
+
+</div>
+
+
+<!-- ESP32 FACE IP -->
+
+<div class="ip-config">
+
+  <input
+    type="text"
+    id="ip-face"
+    value="ws://10.15.3.45:81"
+    placeholder="ws://ESP32_FACE_IP:81"
+  />
+
+  <button onclick="connectFaceSocket()">
+    Connect
+  </button>
+
+</div>
+
+
+<!-- Connection information -->
+
+<div class="connection-info">
+
+  Face ESP32:
+  <span id="face-ip-display">
+    10.15.3.45
+  </span>
+
+  &nbsp; | &nbsp;
+
+  WebSocket:
+  <span>
+    Port 81
+  </span>
+
+</div>
+
+
+<!-- EXPRESSION BUTTONS -->
+
+<div class="btn-grid">
+
+  <button
+    class="face-button"
+    id="btn-happy"
+    onclick="sendExpression('HAPPY')"
+  >
+    😊 Happy
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-sad"
+    onclick="sendExpression('SAD')"
+  >
+    😢 Sad
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-angry"
+    onclick="sendExpression('ANGRY')"
+  >
+    😠 Angry
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-surprised"
+    onclick="sendExpression('SURPRISED')"
+  >
+    😮 Surprised
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-sleepy"
+    onclick="sendExpression('SLEEPY')"
+  >
+    😴 Sleepy
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-wakeup"
+    onclick="sendExpression('WAKEUP')"
+  >
+    👀 Wake Up
+  </button>
+
+  <button
+    class="face-button"
+    id="btn-auto"
+    onclick="sendExpression('AUTO')"
+  >
+    🤖 Auto Mode
+  </button>
+
+</div>
+
+
+<!-- FACE STATUS -->
+
+<div
+  class="metric-box"
+  style="text-align:left;"
+>
+
+  <div class="metric-label">
+    Current Face State
+  </div>
+
+  <div
+    class="metric-val"
+    id="face-state"
+    style="
+      font-size:1rem;
+      color:var(--text-bright);
+    "
+  >
+    AUTO MODE
+  </div>
+
+</div>
+
+
+<!-- FACE LOG -->
+
+<div
+  class="log-terminal"
+  id="log-face"
+>
+  > Connecting to WALL-E Face ESP32...
+</div>
+```
+
+  </div>
+
+  <!-- =====================================================
+       NODE 5 - ENVIRONMENT
+       ===================================================== -->
+
+  <div class="card">
+
+```
+<div class="card-header">
+
+  <span class="card-title">
+    🌡️ Environmental Telemetry (ESP32)
+  </span>
+
+  <span
+    class="status-badge offline"
+    id="badge-env"
+  >
+    Offline
+  </span>
+
+</div>
+
+<div class="ip-config">
+
+  <input
+    type="text"
+    id="ip-env"
+    value="ws://192.168.1.103:80"
+    placeholder="ws://ESP32_ENV_IP:Port"
+  />
+
+  <button onclick="connectEnvSocket()">
+    Connect
+  </button>
+
+</div>
+
+<div class="telemetry-grid">
+
+  <div class="metric-box">
+
+    <div class="metric-label">
+      Temperature
+    </div>
+
+    <div
+      class="metric-val"
+      id="env-temp"
+    >
+      --.- °C
+    </div>
+
+  </div>
+
+
+  <div class="metric-box">
+
+    <div class="metric-label">
+      Humidity
+    </div>
+
+    <div
+      class="metric-val"
+      id="env-hum"
+    >
+      -- %
+    </div>
+
+  </div>
+
+
+  <div class="metric-box">
+
+    <div class="metric-label">
+      Gas Concentration
+    </div>
+
+    <div
+      class="metric-val"
+      id="env-gas"
+    >
+      -- %
+    </div>
+
+  </div>
+
+
+  <div class="metric-box">
+
+    <div class="metric-label">
+      Rain / Moisture
+    </div>
+
+    <div
+      class="metric-val"
+      id="env-rain"
+    >
+      -- %
+    </div>
+
+  </div>
+
+</div>
+
+<div
+  style="
+    font-size:0.75rem;
+    color:#8b949e;
+  "
+>
+  GPS Position:
+
+  <span
+    id="env-gps"
+    style="color:var(--text-bright);"
+  >
+    0.0000, 0.0000
+  </span>
+
+</div>
+```
+
+  </div>
+
+</div>
+
+<script>
+
+/* ==========================================================
+   MASTER PI 5 STREAM
+   ========================================================== */
+
+function connectPiStream() {
+
+  const url =
+    document.getElementById("ip-pi").value;
+
+  const img =
+    document.getElementById("pi-video-stream");
+
+  img.src = url;
+
+  document
+    .getElementById("badge-pi")
+    .className = "status-badge online";
+
+  document
+    .getElementById("badge-pi")
+    .textContent = "Live";
+
+  logMessage(
+    "log-pi",
+    "Connected to Pi 5 stream"
+  );
+}
+
+
+
+/* ==========================================================
+   3D SLAM
+   ========================================================== */
+
+let scene;
+let camera;
+let renderer;
+let robotCube;
+
+let pointsGeometry;
+let pointsMaterial;
+let pointCloud;
+
+let slamSocket;
+
+
+function init3D() {
+
+  const container =
+    document.getElementById("mapping-canvas");
+
+
+  scene = new THREE.Scene();
+
+
+  camera =
+    new THREE.PerspectiveCamera(
+      60,
+      container.clientWidth /
+      container.clientHeight,
+      0.1,
+      1000
+    );
+
+
+  renderer =
+    new THREE.WebGLRenderer({
+      antialias: true
+    });
+
+
+  renderer.setSize(
+    container.clientWidth,
+    container.clientHeight
+  );
+
+
+  container.appendChild(
+    renderer.domElement
+  );
+
+
+  const grid =
+    new THREE.GridHelper(
+      200,
+      20,
+      0xe3a018,
+      0x30363d
+    );
+
+
+  scene.add(grid);
+
+
+  const geom =
+    new THREE.BoxGeometry(
+      10,
+      10,
+      10
+    );
+
+
+  const mat =
+    new THREE.MeshBasicMaterial({
+      color: 0x3fb950,
+      wireframe: true
+    });
+
+
+  robotCube =
+    new THREE.Mesh(
+      geom,
+      mat
+    );
+
+
+  scene.add(robotCube);
+
+
+  pointsGeometry =
+    new THREE.BufferGeometry();
+
+
+  pointsMaterial =
+    new THREE.PointsMaterial({
+      color: 0xda3633,
+      size: 3
+    });
+
+
+  pointCloud =
+    new THREE.Points(
+      pointsGeometry,
+      pointsMaterial
+    );
+
+
+  scene.add(pointCloud);
+
+
+  camera.position.set(
+    0,
+    80,
+    120
+  );
+
+
+  camera.lookAt(
+    0,
+    0,
+    0
+  );
+
+
+  function animate() {
+
+    requestAnimationFrame(
+      animate
+    );
+
+    renderer.render(
+      scene,
+      camera
+    );
+  }
+
+  animate();
+}
+
+
+init3D();
+
+
+
+function connectSLAMWebSocket() {
+
+  const addr =
+    document.getElementById(
+      "ip-slam"
+    ).value;
+
+
+  slamSocket =
+    new WebSocket(addr);
+
+
+  slamSocket.onopen = function() {
+
+    document
+      .getElementById("badge-slam")
+      .className =
+      "status-badge online";
+
+    document
+      .getElementById("badge-slam")
+      .textContent =
+      "Connected";
+
+  };
+
+
+  slamSocket.onmessage =
+    function(event) {
+
+      try {
+
+        const data =
+          JSON.parse(event.data);
+
+
+        if (
+          data.yaw !== undefined
+        ) {
+
+          robotCube.rotation.y =
+            data.yaw *
+            Math.PI /
+            180;
+
+        }
+
+
+        if (data.points) {
+
+          const flatPoints =
+            data.points.flat();
+
+
+          pointsGeometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(
+              flatPoints,
+              3
+            )
+          );
+
+          pointsGeometry.attributes
+            .position
+            .needsUpdate = true;
+        }
+
+      }
+
+      catch(e) {
+
+        console.error(
+          "SLAM JSON Parse Error",
+          e
+        );
+
+      }
+
+    };
+
+
+  slamSocket.onclose =
+    function() {
+
+      document
+        .getElementById("badge-slam")
+        .className =
+        "status-badge offline";
+
+      document
+        .getElementById("badge-slam")
+        .textContent =
+        "Offline";
+
+    };
+
+}
+
+
+
+/* ==========================================================
+   VOICE ASSISTANT
+   ========================================================== */
+
+let voiceSocket;
+
+
+function connectVoiceSocket() {
+
+  const addr =
+    document.getElementById(
+      "ip-voice"
+    ).value;
+
+
+  voiceSocket =
+    new WebSocket(addr);
+
+
+  voiceSocket.onopen =
+    function() {
+
+      document
+        .getElementById("badge-voice")
+        .className =
+        "status-badge online";
+
+      document
+        .getElementById("badge-voice")
+        .textContent =
+        "Listening";
+
+      logMessage(
+        "log-voice",
+        "Voice ESP32 connected"
+      );
+
+    };
+
+
+  voiceSocket.onmessage =
+    function(event) {
+
+      document
+        .getElementById(
+          "voice-command"
+        )
+        .textContent =
+        event.data;
+
+
+      logMessage(
+        "log-voice",
+        "Received: " +
+        event.data
+      );
+
+    };
+
+
+  voiceSocket.onclose =
+    function() {
+
+      document
+        .getElementById("badge-voice")
+        .className =
+        "status-badge offline";
+
+      document
+        .getElementById("badge-voice")
+        .textContent =
+        "Offline";
+
+    };
+
+}
+
+
+
+/* ==========================================================
+   WALL-E FACE ESP32
+   ========================================================== */
+
+let faceSocket = null;
+
+
+/*
+   YOUR ESP32 FACE:
+
+   IP      = 10.15.3.45
+   PORT    = 81
+   PROTOCOL= WebSocket
+
+   Therefore:
+
+   ws://10.15.3.45:81
+*/
+
+
+function connectFaceSocket() {
+
+  const addr =
+    document.getElementById(
+      "ip-face"
+    ).value.trim();
+
+
+  if (
+    faceSocket &&
+    faceSocket.readyState ===
+    WebSocket.OPEN
+  ) {
+
+    faceSocket.close();
+
+  }
+
+
+  logMessage(
+    "log-face",
+    "Connecting to " + addr
+  );
+
+
+  faceSocket =
+    new WebSocket(addr);
+
+
+  /*
+     CONNECTION SUCCESS
+  */
+
+  faceSocket.onopen =
+    function() {
+
+      document
+        .getElementById("badge-face")
+        .className =
+        "status-badge online";
+
+
+      document
+        .getElementById("badge-face")
+        .textContent =
+        "Connected";
+
+
+      logMessage(
+        "log-face",
+        "WALL-E Face ESP32 connected!"
+      );
+
+
+      logMessage(
+        "log-face",
+        "WebSocket connection established"
+      );
+
+
+      /*
+         Tell ESP32 dashboard is connected
+      */
+
+      faceSocket.send(
+        "AUTO"
+      );
+
+    };
+
+
+  /*
+     MESSAGE FROM ESP32
+  */
+
+  faceSocket.onmessage =
+    function(event) {
+
+      const message =
+        event.data;
+
+
+      logMessage(
+        "log-face",
+        "ESP32: " + message
+      );
+
+
+      /*
+         ESP32 responses:
+
+         FACE_CONTROLLER_CONNECTED
+         AUTO_MODE
+         HAPPY_LOCKED
+         SAD_LOCKED
+         ANGRY_LOCKED
+         SURPRISED_LOCKED
+         SLEEPY_LOCKED
+         WAKEUP_LOCKED
+      */
+
+
+      if (
+        message ===
+        "FACE_CONTROLLER_CONNECTED"
+      ) {
+
+        updateFaceState(
+          "CONNECTED"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "AUTO_MODE"
+      ) {
+
+        updateFaceState(
+          "AUTO MODE"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "HAPPY_LOCKED"
+      ) {
+
+        updateFaceState(
+          "HAPPY"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "SAD_LOCKED"
+      ) {
+
+        updateFaceState(
+          "SAD"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "ANGRY_LOCKED"
+      ) {
+
+        updateFaceState(
+          "ANGRY"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "SURPRISED_LOCKED"
+      ) {
+
+        updateFaceState(
+          "SURPRISED"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "SLEEPY_LOCKED"
+      ) {
+
+        updateFaceState(
+          "SLEEPY"
+        );
+
+      }
+
+
+      else if (
+        message ===
+        "WAKEUP_LOCKED"
+      ) {
+
+        updateFaceState(
+          "WAKE UP"
+        );
+
+      }
+
+    };
+
+
+  /*
+     CONNECTION CLOSED
+  */
+
+  faceSocket.onclose =
+    function() {
+
+      document
+        .getElementById("badge-face")
+        .className =
+        "status-badge offline";
+
+
+      document
+        .getElementById("badge-face")
+        .textContent =
+        "Offline";
+
+
+      logMessage(
+        "log-face",
+        "Face ESP32 disconnected"
+      );
+
+    };
+
+
+  /*
+     CONNECTION ERROR
+  */
+
+  faceSocket.onerror =
+    function(error) {
+
+      document
+        .getElementById("badge-face")
+        .className =
+        "status-badge offline";
+
+
+      document
+        .getElementById("badge-face")
+        .textContent =
+        "Error";
+
+
+      logMessage(
+        "log-face",
+        "WebSocket connection error"
+      );
+
+      console.error(
+        "Face WebSocket Error:",
+        error
+      );
+
+    };
+
+}
+
+
+
+/* ==========================================================
+   SEND FACE EXPRESSION
+   ========================================================== */
+
+function sendExpression(expression) {
+
+  expression =
+    expression.toUpperCase();
+
+
+  /*
+     CHECK CONNECTION
+  */
+
+  if (
+    !faceSocket ||
+    faceSocket.readyState !==
+    WebSocket.OPEN
+  ) {
+
+    logMessage(
+      "log-face",
+      "ERROR: Face ESP32 is not connected"
+    );
+
+
+    alert(
+      "WALL-E Face ESP32 is not connected.\n\n" +
+      "Click Connect first."
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+     SEND DIRECT COMMAND TO ESP32
+  */
+
+  faceSocket.send(
+    expression
+  );
+
+
+  /*
+     UPDATE DASHBOARD
+  */
+
+  logMessage(
+    "log-face",
+    "Command sent: " +
+    expression
+  );
+
+
+  updateFaceState(
+    expression
+  );
+
+}
+
+
+
+/* ==========================================================
+   UPDATE FACE STATE
+   ========================================================== */
+
+function updateFaceState(
+  state
+) {
+
+  document
+    .getElementById(
+      "face-state"
+    )
+    .textContent =
+    state;
+
+
+  /*
+     Remove selected state
+     from all buttons
+  */
+
+  const buttons =
+    document.querySelectorAll(
+      ".face-button"
+    );
+
+
+  buttons.forEach(
+    function(button) {
+
+      button.classList.remove(
+        "selected"
+      );
+
+    }
+  );
+
+
+  /*
+     Highlight active button
+  */
+
+  const buttonMap = {
+
+    "HAPPY":
+      "btn-happy",
+
+    "SAD":
+      "btn-sad",
+
+    "ANGRY":
+      "btn-angry",
+
+    "SURPRISED":
+      "btn-surprised",
+
+    "SLEEPY":
+      "btn-sleepy",
+
+    "WAKEUP":
+      "btn-wakeup",
+
+    "WAKE UP":
+      "btn-wakeup",
+
+    "AUTO":
+      "btn-auto",
+
+    "AUTO MODE":
+      "btn-auto"
+
+  };
+
+
+  const buttonId =
+    buttonMap[state];
+
+
+  if (buttonId) {
+
+    const button =
+      document.getElementById(
+        buttonId
+      );
+
+
+    if (button) {
+
+      button.classList.add(
+        "selected"
+      );
+
+    }
+
+  }
+
+}
+
+
+
+/* ==========================================================
+   ENVIRONMENTAL TELEMETRY
+   ========================================================== */
+
+let envSocket;
+
+
+function connectEnvSocket() {
+
+  const addr =
+    document.getElementById(
+      "ip-env"
+    ).value;
+
+
+  envSocket =
+    new WebSocket(addr);
+
+
+  envSocket.onopen =
+    function() {
+
+      document
+        .getElementById("badge-env")
+        .className =
+        "status-badge online";
+
+      document
+        .getElementById("badge-env")
+        .textContent =
+        "Online";
+
+    };
+
+
+  envSocket.onmessage =
+    function(event) {
+
+      try {
+
+        const data =
+          JSON.parse(event.data);
+
+
+        if (
+          data.temp !== undefined
+        ) {
+
+          document
+            .getElementById(
+              "env-temp"
+            )
+            .textContent =
+            data.temp +
+            " °C";
+
+        }
+
+
+        if (
+          data.hum !== undefined
+        ) {
+
+          document
+            .getElementById(
+              "env-hum"
+            )
+            .textContent =
+            data.hum +
+            " %";
+
+        }
+
+
+        if (
+          data.gas !== undefined
+        ) {
+
+          document
+            .getElementById(
+              "env-gas"
+            )
+            .textContent =
+            data.gas +
+            " %";
+
+        }
+
+
+        if (
+          data.rain !== undefined
+        ) {
+
+          document
+            .getElementById(
+              "env-rain"
+            )
+            .textContent =
+            data.rain +
+            " %";
+
+        }
+
+
+        if (
+          data.lat !== undefined &&
+          data.lng !== undefined
+        ) {
+
+          document
+            .getElementById(
+              "env-gps"
+            )
+            .textContent =
+            data.lat +
+            ", " +
+            data.lng;
+
+        }
+
+      }
+
+      catch(e) {
+
+        console.error(
+          "Environment JSON Error:",
+          e
+        );
+
+      }
+
+    };
+
+
+  envSocket.onclose =
+    function() {
+
+      document
+        .getElementById("badge-env")
+        .className =
+        "status-badge offline";
+
+      document
+        .getElementById("badge-env")
+        .textContent =
+        "Offline";
+
+    };
+
+}
+
+
+
+/* ==========================================================
+   LOG FUNCTION
+   ========================================================== */
+
+function logMessage(
+  targetId,
+  message
+) {
+
+  const element =
+    document.getElementById(
+      targetId
+    );
+
+
+  const line =
+    document.createElement(
+      "div"
+    );
+
+
+  line.textContent =
+    "> " + message;
+
+
+  element.appendChild(
+    line
+  );
+
+
+  element.scrollTop =
+    element.scrollHeight;
+
+}
+
+
+
+/* ==========================================================
+   AUTOMATICALLY CONNECT FACE ESP32
+   ========================================================== */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    /*
+       Automatically connect
+       to WALL-E Face ESP32
+    */
+
+    setTimeout(
+      function() {
+
+        connectFaceSocket();
+
+      },
+      500
+    );
+
+  }
+);
+
+</script>
+
+</body>
+</html>
